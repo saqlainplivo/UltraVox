@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultravox Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ultravox Call Dashboard</h1>
+            <p class="subtitle">Sunrise Dental Clinic</p>
+        </header>
+
+        <!-- Ngrok Config Bar -->
+        <section class="card ngrok-bar">
+            <label for="ngrokInput">Ngrok URL</label>
+            <div class="input-row">
+                <input type="text" id="ngrokInput" placeholder="https://xxxx-xx-xx.ngrok-free.app">
+                <button id="saveNgrokBtn" class="btn btn-small">Save</button>
+            </div>
+            <span id="ngrokStatus" class="hint"></span>
+        </section>
+
+        <!-- Call Controls -->
+        <section class="card call-controls">
+            <label for="phoneInput">Phone Number</label>
+            <div class="input-row">
+                <input type="tel" id="phoneInput" placeholder="+1234567890" disabled>
+                <button id="normalCallBtn" class="btn btn-normal" disabled>Normal Call</button>
+                <button id="agentCallBtn" class="btn btn-agent" disabled>Agent Call</button>
+            </div>
+        </section>
+
+        <!-- Active Call Panel -->
+        <section id="activeCallPanel" class="card active-call hidden">
+            <div class="call-header">
+                <div>
+                    <span id="callStatusBadge" class="badge">--</span>
+                    <span id="callPhone" class="call-phone">--</span>
+                    <span id="callTypeBadge" class="badge badge-type">--</span>
+                </div>
+                <div class="call-header-right">
+                    <span id="callTimer" class="call-timer">00:00</span>
+                    <button id="endCallBtn" class="btn btn-end">End Call</button>
+                </div>
+            </div>
+            <div id="transcriptArea" class="transcript-area">
+                <p class="transcript-placeholder">Live transcript will appear here...</p>
+            </div>
+        </section>
+
+        <!-- Call History -->
+        <section class="card">
+            <h2>Call History</h2>
+            <div class="table-wrap">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Phone</th>
+                            <th>Direction</th>
+                            <th>Type</th>
+                            <th>Duration</th>
+                            <th>Turns</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="7" class="empty-row">No calls yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

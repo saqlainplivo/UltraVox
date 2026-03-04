@@ -1,0 +1,7 @@
+requests
+websockets
+sounddevice
+numpy
+flask
+python-dotenv
+plivo
