@@ -18,4 +18,4 @@ EXPOSE ${PORT}
 
 # Run complex_agent (full-featured server with dashboard, tools, DB).
 # Override with ENTRY_SCRIPT env var to use a different script.
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --worker-class gevent --workers 2 --timeout 120 complex_agent:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --worker-class gthread --workers 1 --threads 8 --timeout 120 complex_agent:app"]
