@@ -18,4 +18,4 @@ EXPOSE ${PORT}
 
 # Run complex_agent (full-featured server with dashboard, tools, DB).
 # Override with ENTRY_SCRIPT env var to use a different script.
-CMD ["sh", "-c", "python ${ENTRY_SCRIPT:-complex_agent.py}"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 1 --threads 4 complex_agent:app"]

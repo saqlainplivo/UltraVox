@@ -880,8 +880,9 @@ def health():
 # =============================================================================
 # MAIN
 # =============================================================================
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     print("\n[*] Complex Agent Server  ->  http://0.0.0.0:5000")
     print("[i] Homepage              ->  http://localhost:5000")
     print("[i] Complex Agent         ->  http://localhost:5000/complex-agent")
