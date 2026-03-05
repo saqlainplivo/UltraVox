@@ -35,6 +35,24 @@ header h1 {
     font-size: 0.875rem;
 }
 
+.header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.back-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4f46e5;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
 /* Card */
 .card {
     background: #fff;

@@ -1,0 +1,47 @@
+/* Homepage card grid */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 8px;
+}
+
+.mode-card {
+    display: block;
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.mode-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.mode-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+}
+
+.mode-card h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.mode-card p {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.mode-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4f46e5;
+}

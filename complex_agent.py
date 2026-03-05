@@ -240,6 +240,18 @@ Your workflow for each call:
 Always be warm, brief, and professional. Confirm all details before ending the call.
 """
 
+RECEPTIONIST_PROMPT = """
+You are Maya, a warm and professional receptionist at Sunrise Dental Clinic.
+Your job is to:
+  1. Greet the caller and ask how you can help.
+  2. Handle appointment bookings (ask for name, preferred date/time, and reason for visit).
+  3. Answer general questions about clinic hours (Mon-Sat, 9am-6pm) and location (123 Main St).
+  4. If a caller has a dental emergency, tell them to come in immediately or call 911.
+  5. Be concise -- this is a phone call, not a chat.
+
+Always end by confirming the caller's name and what you've arranged for them.
+"""
+
 
 # =============================================================================
 # TOOL ENDPOINTS (Ultravox calls these during the conversation)
@@ -303,6 +315,31 @@ def create_ultravox_call() -> dict:
             }
         },
         "selectedTools": get_tool_definitions(tools_base),
+    }
+    headers = {
+        "X-API-Key":    ULTRAVOX_API_KEY,
+        "Content-Type": "application/json",
+    }
+    res = requests.post(ULTRAVOX_API_URL, json=payload, headers=headers)
+    if not res.ok:
+        print(f"[!] Ultravox API error {res.status_code}: {res.text}")
+        res.raise_for_status()
+    return res.json()
+
+
+def create_ultravox_call_receptionist() -> dict:
+    """Create an Ultravox call with the receptionist prompt and no tools."""
+    payload = {
+        "systemPrompt": RECEPTIONIST_PROMPT,
+        "voice":        "Sarah",
+        "temperature":  0.5,
+        "firstSpeaker": "FIRST_SPEAKER_AGENT",
+        "medium": {
+            "serverWebSocket": {
+                "inputSampleRate":  8000,
+                "outputSampleRate": 8000,
+            }
+        },
     }
     headers = {
         "X-API-Key":    ULTRAVOX_API_KEY,
@@ -397,8 +434,18 @@ def collect_and_log_metrics(call_id, caller, started_at, direction="inbound", ca
 # DASHBOARD & SSE ROUTES
 # =============================================================================
 @app.route("/")
+def homepage():
+    return render_template("home.html")
+
+
+@app.route("/complex-agent")
 def dashboard():
     return render_template("index.html")
+
+
+@app.route("/receptionist")
+def receptionist_page():
+    return render_template("receptionist.html")
 
 
 @app.route("/api/events")
@@ -470,6 +517,8 @@ def api_make_call():
 
     if call_type == "agent":
         answer_url = f"{ngrok_base_url}/outbound-agent-answered"
+    elif call_type == "receptionist":
+        answer_url = f"{ngrok_base_url}/outbound-receptionist-answered"
     else:
         answer_url = f"{ngrok_base_url}/outbound-normal-answered"
 
@@ -588,6 +637,61 @@ def outbound_agent_answered():
         "phone_number": to_number,
         "status": "connected",
         "call_type": "agent",
+    }, event="call_status")
+
+    # Start transcript polling in background
+    t = threading.Thread(target=poll_transcript, args=(call_id, call_uuid), daemon=True)
+    t.start()
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Stream
+        keepCallAlive="true"
+        bidirectional="true"
+        contentType="audio/x-mulaw;rate=8000"
+        streamTimeout="86400"
+        audioTrack="inbound"
+    >{join_url}</Stream>
+</Response>"""
+    return Response(xml, mimetype="text/xml")
+
+
+@app.route("/outbound-receptionist-answered", methods=["GET", "POST"])
+def outbound_receptionist_answered():
+    call_uuid = request.values.get("CallUUID", "unknown")
+    to_number = request.values.get("To", "unknown")
+    started = datetime.utcnow().isoformat()
+
+    print(f"\n[phone] Receptionist call answered by {to_number}  (UUID: {call_uuid})")
+
+    try:
+        session = create_ultravox_call_receptionist()
+    except Exception as e:
+        print(f"[!] Failed to create Ultravox session: {e}")
+        err_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Speak>Sorry, we are experiencing technical difficulties. Please try again later.</Speak>
+</Response>"""
+        return Response(err_xml, mimetype="text/xml")
+
+    join_url = session["joinUrl"]
+    call_id = session["callId"]
+
+    active_sessions[call_uuid] = {
+        "call_id": call_id,
+        "caller": to_number,
+        "started_at": started,
+        "direction": "outbound",
+        "call_type": "receptionist",
+    }
+    print(f"[+] Ultravox session -> {call_id}")
+
+    announcer.announce({
+        "call_uuid": call_uuid,
+        "call_id": call_id,
+        "phone_number": to_number,
+        "status": "connected",
+        "call_type": "receptionist",
     }, event="call_status")
 
     # Start transcript polling in background
@@ -779,7 +883,9 @@ def health():
 if __name__ == "__main__":
     init_db()
     print("\n[*] Complex Agent Server  ->  http://0.0.0.0:5000")
-    print("[i] Dashboard             ->  http://localhost:5000")
+    print("[i] Homepage              ->  http://localhost:5000")
+    print("[i] Complex Agent         ->  http://localhost:5000/complex-agent")
+    print("[i] Receptionist          ->  http://localhost:5000/receptionist")
     print("[i] Plivo Answer URL      ->  http://<ngrok>/incoming-call")
     print("[i] Plivo Hangup URL      ->  http://<ngrok>/call-ended")
     print("[i] View logs             ->  GET /logs")

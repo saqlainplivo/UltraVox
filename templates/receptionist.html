@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultravox Dashboard</title>
+    <title>Receptionist - Ultravox</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
             <div class="header-row">
                 <a href="/" class="back-link">&larr; Home</a>
                 <div>
-                    <h1>Ultravox Call Dashboard</h1>
+                    <h1>Receptionist Dialer</h1>
                     <p class="subtitle">Sunrise Dental Clinic</p>
                 </div>
             </div>
@@ -33,8 +33,7 @@
             <label for="phoneInput">Phone Number</label>
             <div class="input-row">
                 <input type="tel" id="phoneInput" placeholder="+1234567890" disabled>
-                <button id="normalCallBtn" class="btn btn-normal" disabled>Normal Call</button>
-                <button id="agentCallBtn" class="btn btn-agent" disabled>Agent Call</button>
+                <button id="callBtn" class="btn btn-agent" disabled>Call</button>
             </div>
         </section>
 
@@ -44,7 +43,7 @@
                 <div>
                     <span id="callStatusBadge" class="badge">--</span>
                     <span id="callPhone" class="call-phone">--</span>
-                    <span id="callTypeBadge" class="badge badge-type">--</span>
+                    <span class="badge badge-type">receptionist</span>
                 </div>
                 <div class="call-header-right">
                     <span id="callTimer" class="call-timer">00:00</span>
@@ -58,7 +57,7 @@
 
         <!-- Call History -->
         <section class="card">
-            <h2>Call History</h2>
+            <h2>Receptionist Call History</h2>
             <div class="table-wrap">
                 <table id="historyTable">
                     <thead>
@@ -66,20 +65,18 @@
                             <th>Time</th>
                             <th>Phone</th>
                             <th>Direction</th>
-                            <th>Type</th>
                             <th>Duration</th>
-                            <th>Turns</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="historyBody">
-                        <tr><td colspan="7" class="empty-row">No calls yet</td></tr>
+                        <tr><td colspan="5" class="empty-row">No calls yet</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/receptionist.js"></script>
 </body>
 </html>
