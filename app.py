@@ -1,5 +1,5 @@
 """
-complex_agent.py
+app.py
 
 A full-featured Ultravox agent with:
   - Function / tool calling (check availability, book appointment, send confirmation)
@@ -10,10 +10,10 @@ A full-featured Ultravox agent with:
   - REST endpoints to query logged data
 
 Install deps:
-  pip install flask requests python-dotenv plivo
+  pip install flask requests python-dotenv plivo waitress
 
 Usage:
-  python complex_agent.py
+  python app.py
   Open  http://localhost:5000              -> Dashboard
   GET   http://localhost:5000/logs         -> All call logs
   GET   http://localhost:5000/appointments -> All booked appointments
@@ -44,8 +44,21 @@ PLIVO_PHONE_NUMBER = os.getenv("PLIVO_PHONE_NUMBER")
 
 plivo_client = plivo.RestClient(PLIVO_AUTH_ID, PLIVO_AUTH_TOKEN)
 
-# Runtime-configurable ngrok base URL
-ngrok_base_url = os.getenv("NGROK_BASE_URL", "")
+# Auto-detect public URL for tool endpoints and webhooks
+# Priority: PUBLIC_URL > RAILWAY_PUBLIC_DOMAIN > NGROK_BASE_URL > empty (UI config fallback)
+def _detect_public_url():
+    url = os.getenv("PUBLIC_URL", "")
+    if url:
+        return url.rstrip("/")
+    railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+    if railway_domain:
+        return f"https://{railway_domain}"
+    url = os.getenv("NGROK_BASE_URL", "")
+    if url:
+        return url.rstrip("/")
+    return ""
+
+ngrok_base_url = _detect_public_url()
 
 app = Flask(__name__)
 active_sessions = {}  # call_uuid -> {call_id, caller, started_at, direction, call_type}
@@ -301,7 +314,7 @@ def tool_send_confirmation():
 # ULTRAVOX CALL CREATION
 # =============================================================================
 def create_ultravox_call() -> dict:
-    # Use ngrok URL for tool endpoints (Ultravox requires https)
+    # Use public URL for tool endpoints (Ultravox requires https)
     tools_base = ngrok_base_url if ngrok_base_url else "http://localhost:5000"
     payload = {
         "systemPrompt": SYSTEM_PROMPT,
@@ -489,7 +502,7 @@ def api_ngrok_url():
         url = data.get("url", "").rstrip("/")
         if url:
             ngrok_base_url = url
-            print(f"[i] Ngrok URL updated -> {ngrok_base_url}")
+            print(f"[i] Public URL updated -> {ngrok_base_url}")
             return jsonify({"success": True, "url": ngrok_base_url})
         return jsonify({"success": False, "error": "No URL provided"}), 400
     return jsonify({"url": ngrok_base_url})
@@ -510,7 +523,7 @@ def api_make_call():
         ngrok_base_url = provided_url
 
     if not ngrok_base_url:
-        return jsonify({"success": False, "error": "Ngrok URL not configured"}), 400
+        return jsonify({"success": False, "error": "Public URL not configured"}), 400
 
     if not phone_number:
         return jsonify({"success": False, "error": "Phone number is required"}), 400
@@ -883,14 +896,21 @@ def health():
 init_db()
 
 if __name__ == "__main__":
-    print("\n[*] Complex Agent Server  ->  http://0.0.0.0:5000")
-    print("[i] Homepage              ->  http://localhost:5000")
-    print("[i] Complex Agent         ->  http://localhost:5000/complex-agent")
-    print("[i] Receptionist          ->  http://localhost:5000/receptionist")
-    print("[i] Plivo Answer URL      ->  http://<ngrok>/incoming-call")
-    print("[i] Plivo Hangup URL      ->  http://<ngrok>/call-ended")
-    print("[i] View logs             ->  GET /logs")
-    print("[i] View appointments     ->  GET /appointments")
-    print("[i] View metrics          ->  GET /metrics/summary\n")
+    from waitress import serve
+
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    print(f"\n[*] Ultravox Agent Server")
+    print(f"[*] Serving on http://0.0.0.0:{port}")
+    if ngrok_base_url:
+        print(f"[i] Public URL            ->  {ngrok_base_url}")
+    else:
+        print("[i] Public URL            ->  (not set, configure via UI or env vars)")
+    print(f"[i] Homepage              ->  http://localhost:{port}")
+    print(f"[i] Complex Agent         ->  http://localhost:{port}/complex-agent")
+    print(f"[i] Receptionist          ->  http://localhost:{port}/receptionist")
+    print(f"[i] Plivo Answer URL      ->  <public-url>/incoming-call")
+    print(f"[i] Plivo Hangup URL      ->  <public-url>/call-ended")
+    print(f"[i] View logs             ->  GET /logs")
+    print(f"[i] View appointments     ->  GET /appointments")
+    print(f"[i] View metrics          ->  GET /metrics/summary\n")
+    serve(app, host="0.0.0.0", port=port, threads=8)
